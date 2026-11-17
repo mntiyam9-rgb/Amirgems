@@ -653,3 +653,1010 @@ body.cyber {
 </section>
 
   </div>
+<script>
+(() => {
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const canvas = $("board");
+const ctx = canvas.getContext("2d");
+
+const defaults = {
+  bodyColor:"#55e6a5",
+  headColor:"#b7ffdf",
+  foodColor:"#ff5d8f",
+  bgColor:"#080d1b",
+  theme:"dark",
+  speed:7,
+  gridSize:22,
+  snakeSize:4,
+  sound:true,
+  music:false,
+  obstacles:true,
+  sensitivity:28
+};
+
+let cfg = {...defaults};
+
+let state = "ready";
+let mode = "classic";
+
+let snake = [];
+let food = null;
+let items = [];
+let walls = [];
+
+let score = 0;
+let foodCount = 0;
+let timeLeft = 90;
+
+let dir = {x:1,y:0};
+let nextDir = {x:1,y:0};
+
+let raf = 0;
+let last = 0;
+let acc = 0;
+
+let boost = 0;
+let slow = 0;
+let shield = 0;
+let mult = 1;
+let multTime = 0;
+let invisible = 0;
+
+let particles = [];
+let audioCtx = null;
+let musicTimer = null;
+
+let data = {
+  best:0,
+  games:0,
+  foods:0,
+  history:[]
+};
+
+try {
+  data = {
+    ...data,
+    ...JSON.parse(localStorage.getItem("snakeWorldData") || "{}")
+  };
+} catch(e) {}
+
+function saveData(){
+  localStorage.setItem("snakeWorldData",JSON.stringify(data));
+}
+
+function saveSettings(){
+  localStorage.setItem("snakeWorldSettings",JSON.stringify(cfg));
+}
+
+function loadSettings(){
+  try {
+    cfg = {
+      ...defaults,
+      ...JSON.parse(localStorage.getItem("snakeWorldSettings") || "{}")
+    };
+  } catch(e) {
+    cfg = {...defaults};
+  }
+
+  Object.keys(defaults).forEach(key=>{
+    const el = $(key);
+    if(!el) return;
+
+    if(el.type === "checkbox"){
+      el.checked = !!cfg[key];
+    } else {
+      el.value = cfg[key];
+    }
+  });
+
+  applyTheme();
+}
+
+function applyTheme(){
+  document.body.classList.remove("light","neon","cyber");
+
+  if(cfg.theme === "light"){
+    document.body.classList.add("light");
+  }
+
+  if(cfg.theme === "neon"){
+    document.body.classList.add("neon");
+  }
+
+  if(cfg.theme === "cyber"){
+    document.body.classList.add("cyber");
+  }
+
+  if(cfg.theme === "gradient-theme"){
+    document.body.classList.add("neon");
+  }
+}
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(el=>{
+    el.classList.remove("active");
+  });
+
+  $(id).classList.add("active");
+}
+
+function home(){
+  stopLoop();
+  state = "ready";
+  hideOverlay();
+  updateHome();
+  show("home");
+}
+
+function updateHome(){
+  $("homeBest").textContent = data.best;
+  $("gamesPlayed").textContent = data.games;
+
+  if($("recordBest")) $("recordBest").textContent = data.best;
+  if($("recordTotal")) $("recordTotal").textContent = data.games;
+  if($("recordFoods")) $("recordFoods").textContent = data.foods;
+
+  if($("recentList")){
+    $("recentList").innerHTML = "";
+
+    data.history.slice(0,10).forEach(item=>{
+      const row = document.createElement("div");
+      row.className = "listrow";
+      row.innerHTML =
+        `<span>${item.mode}</span>
+         <b>${item.score}</b>
+         <small>${item.date}</small>`;
+
+      $("recentList").appendChild(row);
+    });
+  }
+}
+
+function selectMode(selected){
+  mode = selected;
+
+  document.querySelectorAll(".mode").forEach(btn=>{
+    btn.classList.toggle(
+      "selected",
+      btn.dataset.mode === selected
+    );
+  });
+}
+
+function N(){
+  return Number(cfg.gridSize);
+}
+
+function randCell(){
+  return {
+    x:Math.floor(Math.random()*N()),
+    y:Math.floor(Math.random()*N())
+  };
+}
+
+function occupied(p){
+  return snake.some(s=>s.x===p.x && s.y===p.y) ||
+         walls.some(w=>w.x===p.x && w.y===p.y) ||
+         items.some(i=>i.x===p.x && i.y===p.y);
+}
+
+function placeFood(){
+  let p;
+
+  do {
+    p = randCell();
+  } while(
+    occupied(p) ||
+    snake.some(s=>s.x===p.x && s.y===p.y)
+  );
+
+  food = p;
+}
+
+function startGame(){
+  stopLoop();
+
+  show("game");
+
+  score = 0;
+  foodCount = 0;
+  timeLeft = 90;
+
+  snake = [
+    {x:Math.floor(N()/2),y:Math.floor(N()/2)},
+    {x:Math.floor(N()/2)-1,y:Math.floor(N()/2)},
+    {x:Math.floor(N()/2)-2,y:Math.floor(N()/2)}
+  ];
+
+  dir = {x:1,y:0};
+  nextDir = {x:1,y:0};
+
+  items = [];
+  walls = [];
+  particles = [];
+
+  boost = 0;
+  slow = 0;
+  shield = 0;
+  mult = 1;
+  multTime = 0;
+  invisible = 0;
+
+  if(mode==="survival" && cfg.obstacles){
+    for(let i=0;i<Math.floor(N()/3);i++){
+      const p = randCell();
+
+      if(!occupied(p)){
+        walls.push(p);
+      }
+    }
+  }
+
+  $("score").textContent = "0";
+  $("best").textContent = data.best;
+  $("timer").textContent = mode==="challenge" ? "90" : "∞";
+
+  hideOverlay();
+
+  state = "playing";
+  last = performance.now();
+  acc = 0;
+
+  playSound(520,.07);
+
+  raf = requestAnimationFrame(loop);
+
+  if(cfg.music){
+    startMusic();
+  }
+}
+
+function stopLoop(){
+  if(raf){
+    cancelAnimationFrame(raf);
+  }
+
+  raf = 0;
+  stopMusic();
+}
+
+function setDirection(x,y){
+  if(state!=="playing") return;
+
+  if(x===-dir.x && y===-dir.y){
+    return;
+  }
+
+  nextDir = {x,y};
+}
+
+function pause(){
+  if(state!=="playing") return;
+
+  state = "paused";
+
+  showOverlay(
+    "بازی متوقف شد",
+    "برای ادامه آماده‌ای؟",
+    "Ⅱ",
+    "ادامه"
+  );
+
+  stopLoop();
+}
+
+function resume(){
+  if(state!=="paused") return;
+
+  hideOverlay();
+
+  state = "playing";
+  last = performance.now();
+
+  raf = requestAnimationFrame(loop);
+
+  if(cfg.music){
+    startMusic();
+  }
+}
+
+function showOverlay(title,msg,icon,button){
+  $("overTitle").textContent = title;
+  $("overText").textContent = msg;
+
+  if($("overIcon")){
+    $("overIcon").textContent = icon;
+  }
+
+  $("overlayMain").textContent = button;
+  $("overlay").classList.add("show");
+}
+
+function hideOverlay(){
+  $("overlay").classList.remove("show");
+}
+
+function endGame(reason="برخورد!"){
+  if(state!=="playing") return;
+
+  state = "over";
+  stopLoop();
+
+  const isBest = score > data.best;
+
+  data.games++;
+  data.foods += foodCount;
+  data.best = Math.max(data.best,score);
+
+  data.history.unshift({
+    score,
+    mode,
+    date:new Date().toLocaleDateString()
+  });
+
+  data.history = data.history.slice(0,20);
+
+  saveData();
+  updateHome();
+
+  $("best").textContent = data.best;
+
+  showOverlay(
+    "پایان بازی",
+    `امتیاز: ${score} · ${reason}${isBest?" · رکورد جدید!":""}`,
+    isBest?"🏆":"✦",
+    "بازی دوباره"
+  );
+
+  playSound(110,.28);
+}
+
+function step(){
+  dir = {...nextDir};
+
+  let head = {
+    x:snake[0].x+dir.x,
+    y:snake[0].y+dir.y
+  };
+
+  if(mode==="endless"){
+    head.x = (head.x+N())%N();
+    head.y = (head.y+N())%N();
+  } else if(
+    head.x<0 ||
+    head.y<0 ||
+    head.x>=N() ||
+    head.y>=N()
+  ){
+    if(shield>0){
+      shield=0;
+      head.x=(head.x+N())%N();
+      head.y=(head.y+N())%N();
+    } else {
+      return endGame("خروج از محدوده");
+    }
+  }
+
+  const ate = food &&
+    head.x===food.x &&
+    head.y===food.y;
+
+  const body = ate ? snake : snake.slice(0,-1);
+
+  if(body.some(s=>s.x===head.x && s.y===head.y)){
+    if(shield>0){
+      shield=0;
+    } else {
+      return endGame("برخورد با خودت");
+    }
+  }
+
+  if(walls.some(w=>w.x===head.x && w.y===head.y)){
+    if(shield>0){
+      shield=0;
+      walls=walls.filter(
+        w=>w.x!==head.x || w.y!==head.y
+      );
+    } else {
+      return endGame("برخورد با مانع");
+    }
+  }
+
+  snake.unshift(head);
+
+  if(ate){
+    score += 10*mult;
+    foodCount++;
+
+    playSound(660,.06);
+
+    burst(
+      (head.x+.5)*600/N(),
+      (head.y+.5)*600/N()
+    );
+
+    placeFood();
+
+    if(foodCount%5===0){
+      spawnItem();
+    }
+
+    if(
+      mode==="survival" &&
+      cfg.obstacles &&
+      foodCount%4===0
+    ){
+      const p=randCell();
+
+      if(!occupied(p)){
+        walls.push(p);
+      }
+    }
+  } else {
+    snake.pop();
+  }
+
+  const ix = items.findIndex(
+    i=>i.x===head.x && i.y===head.y
+  );
+
+  if(ix>=0){
+    const item=items.splice(ix,1)[0];
+    applyItem(item.type);
+  }
+}
+
+function spawnItem(){
+  const types=[
+    "gold",
+    "speed",
+    "slow",
+    "shield",
+    "double",
+    "invisible",
+    "bonus"
+  ];
+
+  let p;
+
+  do {
+    p=randCell();
+  } while(
+    occupied(p) ||
+    (food && food.x===p.x && food.y===p.y)
+  );
+
+  items.push({
+    ...p,
+    type:types[Math.floor(Math.random()*types.length)],
+    life:8500
+  });
+}
+
+function applyItem(type){
+  const names={
+    gold:"غذای طلایی +50",
+    speed:"افزایش سرعت",
+    slow:"کاهش سرعت",
+    shield:"سپر فعال شد",
+    double:"امتیاز ×2",
+    invisible:"نامرئی موقت",
+    bonus:"امتیاز +100"
+  };
+
+  if(type==="gold") score+=50;
+  if(type==="speed") boost=5000;
+  if(type==="slow") slow=5000;
+  if(type==="shield") shield=1;
+
+  if(type==="double"){
+    mult=2;
+    multTime=8000;
+  }
+
+  if(type==="invisible"){
+    invisible=5000;
+  }
+
+  if(type==="bonus"){
+    score+=100;
+  }
+
+  $("score").textContent=score;
+  playSound(880,.12);
+}
+
+function loop(now){
+  if(state!=="playing") return;
+
+  const dt=Math.min(now-last,80);
+  last=now;
+
+  if(mode==="challenge"){
+    timeLeft-=dt/1000;
+
+    $("timer").textContent=Math.max(
+      0,
+      Math.ceil(timeLeft)
+    );
+
+    if(timeLeft<=0){
+      endGame("زمان تمام شد");
+      return;
+    }
+  }
+
+  if(multTime>0){
+    multTime-=dt;
+
+    if(multTime<=0){
+      mult=1;
+    }
+  }
+
+  if(boost>0) boost-=dt;
+  if(slow>0) slow-=dt;
+  if(invisible>0) invisible-=dt;
+
+  items.forEach(i=>i.life-=dt);
+  items=items.filter(i=>i.life>0);
+
+  let base=1000/(
+    Number(cfg.speed)+
+    (mode==="speed"?4:0)+
+    Math.floor(score/100)
+  );
+
+  if(boost>0) base*=.65;
+  if(slow>0) base*=1.45;
+
+  acc+=dt;
+
+  while(acc>=base){
+    step();
+    acc-=base;
+
+    if(state!=="playing") return;
+  }
+
+  draw();
+
+  raf=requestAnimationFrame(loop);
+}
+
+function draw(){
+  const n=N();
+  const cell=600/n;
+
+  ctx.clearRect(0,0,600,600);
+
+  ctx.fillStyle=cfg.bgColor;
+  ctx.fillRect(0,0,600,600);
+
+  ctx.strokeStyle="rgba(180,200,255,.055)";
+  ctx.lineWidth=1;
+
+  for(let i=0;i<=n;i++){
+    ctx.beginPath();
+    ctx.moveTo(i*cell,0);
+    ctx.lineTo(i*cell,600);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0,i*cell);
+    ctx.lineTo(600,i*cell);
+    ctx.stroke();
+  }
+
+  walls.forEach(w=>{
+    ctx.fillStyle="#f97316";
+    roundRect(
+      w.x*cell+3,
+      w.y*cell+3,
+      cell-6,
+      cell-6,
+      6
+    );
+    ctx.fill();
+  });
+
+  if(food){
+    ctx.shadowBlur=18;
+    ctx.shadowColor=cfg.foodColor;
+    ctx.fillStyle=cfg.foodColor;
+
+    ctx.beginPath();
+    ctx.arc(
+      (food.x+.5)*cell,
+      (food.y+.5)*cell,
+      cell*.29,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
+  const colors={
+    gold:"#ffd166",
+    speed:"#fb923c",
+    slow:"#60a5fa",
+    shield:"#38bdf8",
+    double:"#c084fc",
+    invisible:"#a3e635",
+    bonus:"#f472b6"
+  };
+
+  const icons={
+    gold:"★",
+    speed:"⚡",
+    slow:"◷",
+    shield:"◇",
+    double:"×2",
+    invisible:"◌",
+    bonus:"+"
+  };
+
+  items.forEach(it=>{
+    ctx.fillStyle=colors[it.type];
+    ctx.shadowColor=colors[it.type];
+    ctx.shadowBlur=15;
+
+    ctx.beginPath();
+    ctx.arc(
+      (it.x+.5)*cell,
+      (it.y+.5)*cell,
+      cell*.32,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+    ctx.shadowBlur=0;
+
+    ctx.fillStyle="#101426";
+    ctx.font=`bold ${cell*.36}px sans-serif`;
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    ctx.fillText(
+      icons[it.type],
+      (it.x+.5)*cell,
+      (it.y+.5)*cell
+    );
+  });
+
+  snake.forEach((s,i)=>{
+    const x=s.x*cell+2;
+    const y=s.y*cell+2;
+    const w=cell-4;
+
+    ctx.globalAlpha=invisible>0?.38:1;
+
+    ctx.fillStyle=i===0?cfg.headColor:cfg.bodyColor;
+    ctx.shadowColor=ctx.fillStyle;
+    ctx.shadowBlur=i===0?16:8;
+
+    roundRect(x,y,w,w,cell*.28);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+
+    if(i===0){
+      ctx.fillStyle="#101426";
+
+      ctx.beginPath();
+      ctx.arc(
+        x+w*.65,
+        y+w*.34,
+        Math.max(2,cell*.055),
+        0,
+        Math.PI*2
+      );
+
+      ctx.arc(
+        x+w*.65,
+        y+w*.68,
+        Math.max(2,cell*.055),
+        0,
+        Math.PI*2
+      );
+
+      ctx.fill();
+    }
+  });
+
+  ctx.globalAlpha=1;
+
+  particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life/500);
+    ctx.fillStyle=p.color;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.life-=18;
+  });
+
+  ctx.globalAlpha=1;
+  particles=particles.filter(p=>p.life>0);
+
+  $("score").textContent=score;
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
+}
+
+function burst(x,y){
+  for(let i=0;i<16;i++){
+    const a=Math.random()*Math.PI*2;
+    const v=1+Math.random()*4;
+
+    particles.push({
+      x,y,
+      vx:Math.cos(a)*v,
+      vy:Math.sin(a)*v,
+      life:500,
+      r:2+Math.random()*3,
+      color:[
+        "#f472b6",
+        "#67e8f9",
+        "#fde68a",
+        "#a78bfa"
+      ][i%4]
+    });
+  }
+}
+
+function playSound(freq,dur){
+  if(!cfg.sound) return;
+
+  try {
+    audioCtx=audioCtx ||
+      new(window.AudioContext||window.webkitAudioContext)();
+
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+
+    o.frequency.value=freq;
+    o.type="sine";
+
+    g.gain.setValueAtTime(
+      .07,
+      audioCtx.currentTime
+    );
+
+    g.gain.exponentialRampToValueAtTime(
+      .001,
+      audioCtx.currentTime+dur
+    );
+
+    o.connect(g);
+    g.connect(audioCtx.destination);
+
+    o.start();
+    o.stop(audioCtx.currentTime+dur);
+  } catch(e){}
+}
+
+function startMusic(){
+  stopMusic();
+
+  const notes=[220,277,330,277];
+  let i=0;
+
+  musicTimer=setInterval(()=>{
+    if(state==="playing"){
+      playSound(notes[i++%notes.length],.12);
+    }
+  },550);
+}
+
+function stopMusic(){
+  if(musicTimer){
+    clearInterval(musicTimer);
+  }
+
+  musicTimer=null;
+}
+
+/* دکمه‌ها */
+
+$("playBtn").onclick=startGame;
+
+$("customBtn").onclick=()=>{
+  loadSettings();
+  show("settings");
+};
+
+$("recordsBtn").onclick=()=>{
+  updateHome();
+  show("records");
+};
+
+$("homeBtn").onclick=home;
+
+$("pauseBtn").onclick=pause;
+
+$("restartBtn").onclick=startGame;
+
+$("overlayMain").onclick=()=>{
+  if(state==="paused"){
+    resume();
+  } else {
+    startGame();
+  }
+};
+
+$("overlayHome").onclick=home;
+
+/* انتخاب حالت بازی */
+
+document.querySelectorAll(".mode").forEach(btn=>{
+  btn.onclick=()=>{
+    selectMode(btn.dataset.mode);
+  };
+});
+
+/* کنترل لمسی */
+
+document.querySelectorAll("[data-dir]").forEach(btn=>{
+  const map={
+    up:[0,-1],
+    down:[0,1],
+    left:[-1,0],
+    right:[1,0]
+  };
+
+  btn.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    setDirection(...map[btn.dataset.dir]);
+  });
+});
+
+/* کنترل کیبورد */
+
+document.addEventListener("keydown",e=>{
+  const map={
+    ArrowUp:[0,-1],
+    w:[0,-1],
+    ArrowDown:[0,1],
+    s:[0,1],
+    ArrowLeft:[-1,0],
+    a:[-1,0],
+    ArrowRight:[1,0],
+    d:[1,0]
+  };
+
+  if(map[e.key]){
+    e.preventDefault();
+    setDirection(...map[e.key]);
+  }
+
+  if(e.key===" "){
+    e.preventDefault();
+
+    if(state==="playing") pause();
+    else if(state==="paused") resume();
+  }
+});
+
+/* حرکت با کشیدن انگشت */
+
+let sx=0;
+let sy=0;
+
+$("boardWrap").addEventListener("pointerdown",e=>{
+  sx=e.clientX;
+  sy=e.clientY;
+});
+
+$("boardWrap").addEventListener("pointerup",e=>{
+  const dx=e.clientX-sx;
+  const dy=e.clientY-sy;
+
+  if(Math.max(Math.abs(dx),Math.abs(dy))<cfg.sensitivity){
+    return;
+  }
+
+  if(Math.abs(dx)>Math.abs(dy)){
+    setDirection(dx>0?1:-1,0);
+  } else {
+    setDirection(0,dy>0?1:-1);
+  }
+});
+
+$("boardWrap").addEventListener(
+  "touchmove",
+  e=>e.preventDefault(),
+  {passive:false}
+);
+
+/* رنگ‌ها و تنظیمات */
+
+$("applyHex").onclick=()=>{
+  const value=$("hexInput").value.trim();
+
+  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)){
+    $("bodyColor").value=value;
+    return;
+  }
+
+  const rgb=value.match(
+    /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i
+  );
+
+  if(rgb){
+    const values=rgb.slice(1).map(Number);
+
+    if(values.every(x=>x<=255)){
+      $("bodyColor").value="#"+values
+        .map(x=>x.toString(16).padStart(2,"0"))
+        .join("");
+      return;
+    }
+  }
+
+  alert("کد رنگ معتبر نیست");
+};
+
+$("saveSettings").onclick=()=>{
+  Object.keys(defaults).forEach(key=>{
+    const el=$(key);
+    if(!el) return;
+
+    cfg[key]=el.type==="checkbox"
+      ?el.checked
+      :el.type==="range"
+      ?Number(el.value)
+      :el.value;
+  });
+
+  saveSettings();
+  applyTheme();
+  home();
+};
+
+/* تغییر زبان */
+
+let lang="fa";
+
+$("langBtn").onclick=()=>{
+  lang=lang==="fa"?"en":"fa";
+
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==="fa"?"rtl":"ltr";
+
+  $("langBtn").textContent=lang==="fa"?"EN":"فا";
+
+  if(lang==="en"){
+    $("playBtn").textContent="▶ Start Game";
+    $("customBtn").textContent="✦ Customize";
+    $("recordsBtn").textContent="♛ Records";
+  } else {
+    $("playBtn").textContent="▶ شروع بازی";
+    $("customBtn").textContent="✦ شخصی‌سازی";
+    $("recordsBtn").textContent="♛ رکوردها";
+  }
+};
+
+/* راه‌اندازی اولیه */
+
+loadSettings();
+updateHome();
+draw();
+
+})();
+</script>
+
+</body>
+  </html>
