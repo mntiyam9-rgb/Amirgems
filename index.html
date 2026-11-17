@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090b16">
+<title>SNAKE WORLD</title>
+
+<style>
+:root {
+  --bg:#090b16;
+  --panel:rgba(20,25,45,.82);
+  --line:rgba(255,255,255,.10);
+  --text:#f4f6ff;
+  --muted:#9ca6c5;
+  --accent:#8b5cf6;
+  --accent2:#22d3ee;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+html,body {
+  margin:0;
+  min-height:100%;
+  background:
+    radial-gradient(ellipse at 15% 0%,#22204a 0,transparent 42%),
+    radial-gradient(ellipse at 90% 80%,#10334a 0,transparent 38%),
+    var(--bg);
+  color:var(--text);
+  font-family:system-ui,Tahoma,sans-serif;
+  overscroll-behavior:none;
+}
+
+body {
+  padding:12px;
+  touch-action:pan-y;
+}
+
+.app {
+  max-width:1050px;
+  margin:auto;
+}
+
+.top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.logo {
+  width:44px;
+  height:44px;
+  border-radius:15px;
+  background:linear-gradient(135deg,#a78bfa,#22d3ee);
+  display:grid;
+  place-items:center;
+  color:#080b18;
+  font-size:25px;
+}
+
+.brand h1 {
+  font-size:20px;
+  letter-spacing:2px;
+  margin:0;
+}
+
+.brand small {
+  color:var(--muted);
+  font-size:10px;
+}
+
+.btn {
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  border-radius:13px;
+  padding:10px 14px;
+  font:inherit;
+  cursor:pointer;
+}
+
+.btn.primary {
+  background:linear-gradient(120deg,#8b5cf6,#4778ef);
+  border:0;
+  font-weight:800;
+}
+
+.screen {
+  display:none;
+}
+
+.screen.active {
+  display:block;
+  animation:appear .28s ease;
+}
+
+@keyframes appear {
+  from {
+    opacity:0;
+    transform:translateY(8px);
+  }
+  to {
+    opacity:1;
+    transform:none;
+  }
+}
+
+.hero {
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:35px;
+  background:linear-gradient(
+    135deg,
+    rgba(139,92,246,.17),
+    rgba(34,211,238,.07)
+  ),var(--panel);
+}
+
+.hero h2 {
+  font-size:55px;
+  margin:0;
+}
+
+.gradient {
+  background:linear-gradient(90deg,#c4b5fd,#67e8f9,#86efac);
+  background-clip:text;
+  color:transparent;
+}
+
+.sub {
+  color:var(--muted);
+  line-height:1.9;
+}
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:16px;
+}
+
+.stat,.panel {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:19px;
+  padding:15px;
+}
+
+.stat strong {
+  font-size:24px;
+  display:block;
+}
+
+.stat span {
+  font-size:12px;
+  color:var(--muted);
+}
+
+.section-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:20px 2px 12px;
+}
+
+.cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
+  gap:10px;
+}
+
+.mode {
+  padding:15px;
+  text-align:right;
+  border-radius:17px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.045);
+  color:var(--text);
+  cursor:pointer;
+}
+
+.mode.selected {
+  border-color:#a78bfa;
+  background:#8b5cf622;
+}
+
+.mode b {
+  display:block;
+  margin-bottom:5px;
+}
+
+.mode span {
+  color:var(--muted);
+  font-size:11px;
+}
+
+.game-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 250px;
+  gap:14px;
+}
+
+.gamebox {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:23px;
+  padding:12px;
+}
+
+.hud {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-bottom:10px;
+}
+
+.board-wrap {
+  position:relative;
+  border-radius:15px;
+  overflow:hidden;
+  background:#080d1b;
+  touch-action:none;
+}
+
+canvas {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:1/1;
+}
+
+.overlay {
+  position:absolute;
+  inset:0;
+  display:none;
+  place-items:center;
+  background:#070a17c9;
+  text-align:center;
+}
+
+.overlay.show {
+  display:grid;
+}
+
+.side {
+  display:grid;
+  gap:12px;
+}
+
+.controlpad {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  max-width:190px;
+  margin:auto;
+}
+
+.controlpad button {
+  height:48px;
+  font-size:21px;
+}
+
+.field {
+  display:grid;
+  gap:6px;
+  margin:12px 0;
+}
+
+input,select {
+  width:100%;
+  border:1px solid var(--line);
+  background:#11172a;
+  color:white;
+  border-radius:11px;
+  padding:10px;
+}
+
+input[type=color] {
+  height:42px;
+}
+
+input[type=range] {
+  accent-color:#a78bfa;
+}
+
+.toggle {
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+}
+
+.colorrow {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.toolbar {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.list {
+  display:grid;
+  gap:8px;
+}
+
+.listrow {
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  border-radius:12px;
+  background:#ffffff08;
+}
+
+.hidden {
+  display:none!important;
+}
+
+body.light {
+  --bg:#edf1ff;
+  --panel:rgba(255,255,255,.86);
+  --text:#18213a;
+  --muted:#64708e;
+  --line:rgba(24,33,58,.13);
+}
+
+body.neon {
+  --accent:#00f5d4;
+  --accent2:#f15bb5;
+}
+
+body.cyber {
+  --accent:#f72585;
+  --accent2:#4cc9f0;
+}
+
+@media(max-width:760px) {
+  .game-layout {
+    grid-template-columns:1fr;
+  }
+  .side {
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:430px) {
+  .side {
+    grid-template-columns:1fr;
+  }
+  .hero {
+    padding:20px;
+  }
+  .hero h2 {
+    font-size:40px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">〰</div>
+    <div>
+      <h1>SNAKE WORLD</h1>
+      <small>PLAY • EVOLVE • CONQUER</small>
+    </div>
+  </div>
+  <button class="btn" id="langBtn">EN</button>
+</header>
+
+<section id="home" class="screen active">
+  <div class="hero">
+    <h2>
+      <span class="gradient">SNAKE</span><br>
+      WORLD
+    </h2>
+
+    <p class="sub">
+      وارد دنیایی از رنگ، سرعت و چالش شو.
+      مار خودت را بساز، آیتم‌ها را جمع کن
+      و رکورد تازه‌ای ثبت کن.
+    </p>
+
+    <div class="toolbar">
+      <button class="btn primary" id="playBtn">
+        ▶ شروع بازی
+      </button>
+
+      <button class="btn" id="customBtn">
+        ✦ شخصی‌سازی
+      </button>
+
+      <button class="btn" id="recordsBtn">
+        ♛ رکوردها
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <strong id="homeBest">0</strong>
+      <span>بهترین امتیاز</span>
+    </div>
+
+    <div class="stat">
+      <strong id="gamesPlayed">0</strong>
+      <span>بازی انجام‌شده</span>
+    </div>
+
+    <div class="stat">
+      <strong>5</strong>
+      <span>حالت بازی</span>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h3>انتخاب حالت بازی</h3>
+  </div>
+
+  <div class="cards" id="modeCards">
+    <button class="mode selected" data-mode="classic">
+      <b>🐍 Classic</b>
+      <span>کلاسیک و متعادل</span>
+    </button>
+
+    <button class="mode" data-mode="endless">
+      <b>∞ Endless</b>
+      <span>بدون محدودیت مرحله</span>
+    </button>
+
+    <button class="mode" data-mode="challenge">
+      <b>⏱ Challenge</b>
+      <span>چالش زمان‌دار</span>
+    </button>
+
+    <button class="mode" data-mode="survival">
+      <b>⚡ Survival</b>
+      <span>حالت بقا</span>
+    </button>
+
+    <button class="mode" data-mode="speed">
+      <b>🚀 Speed Run</b>
+      <span>رقابت سرعتی</span>
+    </button>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="game-layout">
+
+    <div class="gamebox">
+      <div class="hud">
+        <div class="stat">
+          <strong id="score">0</strong>
+          <span>امتیاز</span>
+        </div>
+
+        <div class="stat">
+          <strong id="best">0</strong>
+          <span>رکورد</span>
+        </div>
+
+        <div class="stat">
+          <strong id="timer">∞</strong>
+          <span>زمان</span>
+        </div>
+      </div>
+
+      <div class="board-wrap" id="boardWrap">
+        <canvas id="board" width="600" height="600"></canvas>
+
+        <div class="overlay" id="overlay">
+          <div>
+            <h2 id="overTitle">بازی متوقف شد</h2>
+            <p id="overText"></p>
+
+            <button class="btn primary" id="overlayMain">
+              ادامه
+            </button>
+
+            <button class="btn" id="overlayHome">
+              خانه
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="pauseBtn">Ⅱ توقف</button>
+        <button class="btn" id="restartBtn">↻ شروع مجدد</button>
+        <button class="btn" id="homeBtn">⌂ خانه</button>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <h3>کنترل لمسی</h3>
+
+        <div class="controlpad">
+          <button class="btn" data-dir="up">↑</button>
+          <button class="btn" data-dir="left">←</button>
+          <button class="btn" data-dir="down">↓</button>
+          <button class="btn" data-dir="right">→</button>
+        </div>
+
+        <p>برای حرکت، انگشتت را روی صفحه بکش.</p>
+      </div>
+
+      <div class="panel">
+        <h3>آیتم‌ها</h3>
+        <div class="list">
+          <div class="listrow">🟢 غذای معمولی <b>+10</b></div>
+          <div class="listrow">🌟 طلایی <b>+50</b></div>
+          <div class="listrow">⚡ سرعت <b>موقت</b></div>
+          <div class="listrow">🛡 سپر <b>محافظت</b></div>
+          <div class="listrow">✖ چندبرابر <b>×2</b></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section id="settings" class="screen">
+  <div class="panel">
+    <h3>تنظیمات و شخصی‌سازی</h3>
+
+    <div class="colorrow">
+      <div class="field">
+        <label>رنگ بدن مار</label>
+        <input type="color" id="bodyColor" value="#55e6a5">
+      </div>
+
+      <div class="field">
+        <label>رنگ سر مار</label>
+        <input type="color" id="headColor" value="#b7ffdf">
+      </div>
+
+      <div class="field">
+        <label>رنگ غذا</label>
+        <input type="color" id="foodColor" value="#ff5d8f">
+      </div>
+
+      <div class="field">
+        <label>پس‌زمینه</label>
+        <input type="color" id="bgColor" value="#080d1b">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>کد HEX</label>
+      <input id="hexInput" placeholder="#8B5CF6">
+      <button class="btn" id="applyHex">اعمال رنگ</button>
+    </div>
+
+    <div class="field">
+      <label>تم محیط</label>
+      <select id="theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="neon">Neon</option>
+        <option value="cyber">Cyberpunk</option>
+        <option value="gradient-theme">Gradient</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>سرعت بازی</label>
+      <input type="range" id="speed" min="4" max="15" value="7">
+    </div>
+
+    <div class="field">
+      <label>اندازه زمین</label>
+      <select id="gridSize">
+        <option value="18">کوچک</option>
+        <option value="22" selected>متوسط</option>
+        <option value="28">بزرگ</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>اندازه مار</label>
+      <select id="snakeSize">
+        <option value="3">کوچک</option>
+        <option value="4" selected>متوسط</option>
+        <option value="6">بزرگ</option>
+      </select>
+    </div>
+
+    <div class="toggle">
+      <span>افکت‌های صوتی</span>
+      <input type="checkbox" id="sound" checked>
+    </div>
+
+    <div class="toggle">
+      <span>موسیقی پس‌زمینه</span>
+      <input type="checkbox" id="music">
+    </div>
+
+    <div class="toggle">
+      <span>موانع متحرک</span>
+      <input type="checkbox" id="obstacles" checked>
+    </div>
+
+    <div class="field">
+      <label>حساسیت لمس</label>
+      <input type="range" id="sensitivity" min="12" max="65" value="28">
+    </div>
+
+    <button class="btn primary" id="saveSettings">
+      ذخیره تنظیمات
+    </button>
+  </div>
+</section>
+
+<section id="records" class="screen">
+  <div class="panel">
+    <h3>رکوردها و دستاوردها</h3>
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="recordBest">0</strong>
+        <span>بهترین امتیاز</span>
+      </div>
+
+      <div class="stat">
+        <strong id="recordTotal">0</strong>
+        <span>کل بازی‌ها</span>
+      </div>
+
+      <div class="stat">
+        <strong id="recordFoods">0</strong>
+        <span>غذاهای خورده‌شده</span>
+      </div>
+    </div>
+
+    <div id="recentList" class="list"></div>
+  </div>
+</section>
+
+  </div>
