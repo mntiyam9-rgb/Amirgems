@@ -4,1659 +4,262 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#090b16">
-<title>SNAKE WORLD</title>
-
+<title>SNAKE WORLD — Amir Drostkar</title>
 <style>
-:root {
-  --bg:#090b16;
-  --panel:rgba(20,25,45,.82);
-  --line:rgba(255,255,255,.10);
-  --text:#f4f6ff;
-  --muted:#9ca6c5;
-  --accent:#8b5cf6;
-  --accent2:#22d3ee;
-}
-
-* {
-  box-sizing:border-box;
-}
-
-html,body {
-  margin:0;
-  min-height:100%;
-  background:
-    radial-gradient(ellipse at 15% 0%,#22204a 0,transparent 42%),
-    radial-gradient(ellipse at 90% 80%,#10334a 0,transparent 38%),
-    var(--bg);
-  color:var(--text);
-  font-family:system-ui,Tahoma,sans-serif;
-  overscroll-behavior:none;
-}
-
-body {
-  padding:12px;
-  touch-action:pan-y;
-}
-
-.app {
-  max-width:1050px;
-  margin:auto;
-}
-
-.top {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:18px;
-}
-
-.brand {
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.logo {
-  width:44px;
-  height:44px;
-  border-radius:15px;
-  background:linear-gradient(135deg,#a78bfa,#22d3ee);
-  display:grid;
-  place-items:center;
-  color:#080b18;
-  font-size:25px;
-}
-
-.brand h1 {
-  font-size:20px;
-  letter-spacing:2px;
-  margin:0;
-}
-
-.brand small {
-  color:var(--muted);
-  font-size:10px;
-}
-
-.btn {
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.06);
-  color:var(--text);
-  border-radius:13px;
-  padding:10px 14px;
-  font:inherit;
-  cursor:pointer;
-}
-
-.btn.primary {
-  background:linear-gradient(120deg,#8b5cf6,#4778ef);
-  border:0;
-  font-weight:800;
-}
-
-.screen {
-  display:none;
-}
-
-.screen.active {
-  display:block;
-  animation:appear .28s ease;
-}
-
-@keyframes appear {
-  from {
-    opacity:0;
-    transform:translateY(8px);
-  }
-  to {
-    opacity:1;
-    transform:none;
-  }
-}
-
-.hero {
-  border:1px solid var(--line);
-  border-radius:28px;
-  padding:35px;
-  background:linear-gradient(
-    135deg,
-    rgba(139,92,246,.17),
-    rgba(34,211,238,.07)
-  ),var(--panel);
-}
-
-.hero h2 {
-  font-size:55px;
-  margin:0;
-}
-
-.gradient {
-  background:linear-gradient(90deg,#c4b5fd,#67e8f9,#86efac);
-  background-clip:text;
-  color:transparent;
-}
-
-.sub {
-  color:var(--muted);
-  line-height:1.9;
-}
-
-.stats {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin-top:16px;
-}
-
-.stat,.panel {
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:19px;
-  padding:15px;
-}
-
-.stat strong {
-  font-size:24px;
-  display:block;
-}
-
-.stat span {
-  font-size:12px;
-  color:var(--muted);
-}
-
-.section-title {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin:20px 2px 12px;
-}
-
-.cards {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
-  gap:10px;
-}
-
-.mode {
-  padding:15px;
-  text-align:right;
-  border-radius:17px;
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.045);
-  color:var(--text);
-  cursor:pointer;
-}
-
-.mode.selected {
-  border-color:#a78bfa;
-  background:#8b5cf622;
-}
-
-.mode b {
-  display:block;
-  margin-bottom:5px;
-}
-
-.mode span {
-  color:var(--muted);
-  font-size:11px;
-}
-
-.game-layout {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 250px;
-  gap:14px;
-}
-
-.gamebox {
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:23px;
-  padding:12px;
-}
-
-.hud {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-  margin-bottom:10px;
-}
-
-.board-wrap {
-  position:relative;
-  border-radius:15px;
-  overflow:hidden;
-  background:#080d1b;
-  touch-action:none;
-}
-
-canvas {
-  display:block;
-  width:100%;
-  height:auto;
-  aspect-ratio:1/1;
-}
-
-.overlay {
-  position:absolute;
-  inset:0;
-  display:none;
-  place-items:center;
-  background:#070a17c9;
-  text-align:center;
-}
-
-.overlay.show {
-  display:grid;
-}
-
-.side {
-  display:grid;
-  gap:12px;
-}
-
-.controlpad {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:7px;
-  max-width:190px;
-  margin:auto;
-}
-
-.controlpad button {
-  height:48px;
-  font-size:21px;
-}
-
-.field {
-  display:grid;
-  gap:6px;
-  margin:12px 0;
-}
-
-input,select {
-  width:100%;
-  border:1px solid var(--line);
-  background:#11172a;
-  color:white;
-  border-radius:11px;
-  padding:10px;
-}
-
-input[type=color] {
-  height:42px;
-}
-
-input[type=range] {
-  accent-color:#a78bfa;
-}
-
-.toggle {
-  display:flex;
-  justify-content:space-between;
-  padding:8px 0;
-}
-
-.colorrow {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.toolbar {
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
-
-.list {
-  display:grid;
-  gap:8px;
-}
-
-.listrow {
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  border-radius:12px;
-  background:#ffffff08;
-}
-
-.hidden {
-  display:none!important;
-}
-
-body.light {
-  --bg:#edf1ff;
-  --panel:rgba(255,255,255,.86);
-  --text:#18213a;
-  --muted:#64708e;
-  --line:rgba(24,33,58,.13);
-}
-
-body.neon {
-  --accent:#00f5d4;
-  --accent2:#f15bb5;
-}
-
-body.cyber {
-  --accent:#f72585;
-  --accent2:#4cc9f0;
-}
-
-@media(max-width:760px) {
-  .game-layout {
-    grid-template-columns:1fr;
-  }
-  .side {
-    grid-template-columns:1fr 1fr;
-  }
-}
-
-@media(max-width:430px) {
-  .side {
-    grid-template-columns:1fr;
-  }
-  .hero {
-    padding:20px;
-  }
-  .hero h2 {
-    font-size:40px;
-  }
-}
+:root{--bg:#090b16;--panel:rgba(20,25,45,.9);--line:rgba(255,255,255,.12);--text:#f4f6ff;--muted:#9ca6c5;--purple:#8b5cf6;--cyan:#22d3ee}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 15% 0%,#22204a 0,transparent 42%),radial-gradient(ellipse at 90% 80%,#10334a 0,transparent 38%),var(--bg);color:var(--text);font-family:system-ui,Tahoma,sans-serif}
+body{padding:12px;touch-action:pan-y}
+.app{max-width:1050px;margin:auto}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}.logo{width:44px;height:44px;border-radius:15px;background:linear-gradient(135deg,#a78bfa,#22d3ee);display:grid;place-items:center;color:#080b18;font-size:25px}
+.brand h1{font-size:19px;letter-spacing:1.5px;margin:0}.brand small{color:var(--muted);font-size:10px}
+.btn{border:1px solid var(--line);background:#ffffff0c;color:var(--text);border-radius:13px;padding:10px 14px;font:inherit;cursor:pointer}
+.btn:active,.mode:active{transform:scale(.97)}.btn.primary{background:linear-gradient(120deg,#8b5cf6,#4778ef);border:0;font-weight:800}
+.screen{display:none}.screen.active{display:block;animation:appear .25s ease}
+@keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.hero{border:1px solid var(--line);border-radius:28px;padding:32px;background:linear-gradient(135deg,#8b5cf626,#22d3ee10),var(--panel)}
+.hero h2{font-size:clamp(40px,8vw,58px);margin:0;line-height:1.05}.gradient{background:linear-gradient(90deg,#c4b5fd,#67e8f9,#86efac);background-clip:text;color:transparent}
+.sub{color:var(--muted);line-height:1.9}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px}
+.stat,.panel,.gamebox{background:var(--panel);border:1px solid var(--line);border-radius:19px;padding:14px}
+.stat strong{font-size:24px;display:block}.stat span{font-size:12px;color:var(--muted)}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
+.mode{padding:15px;text-align:right;border-radius:17px;border:1px solid var(--line);background:#ffffff0b;color:var(--text);cursor:pointer}
+.mode.selected{border-color:#a78bfa;background:#8b5cf626}.mode b{display:block;margin-bottom:5px}.mode span{color:var(--muted);font-size:11px}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:14px}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.board-wrap{position:relative;border-radius:15px;overflow:hidden;background:#080d1b;touch-action:none}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1/1}
+.overlay{position:absolute;inset:0;display:none;place-items:center;background:#070a17d9;text-align:center;padding:20px}
+.overlay.show{display:grid}.overlay h2{margin:0 0 8px}.overlay p{color:#d4d9ee}
+.side{display:grid;gap:12px;align-content:start}.controlpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:190px;margin:auto}
+.controlpad button{height:48px;font-size:21px}.field{display:grid;gap:6px;margin:12px 0}
+input,select{width:100%;border:1px solid var(--line);background:#11172a;color:white;border-radius:11px;padding:10px;font:inherit}
+input[type=color]{height:42px;padding:4px}input[type=range]{accent-color:#a78bfa;padding:0}
+.colorrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.list{display:grid;gap:8px}.listrow{display:flex;justify-content:space-between;gap:8px;padding:10px;border-radius:12px;background:#ffffff08;align-items:center}
+.muted{color:var(--muted);font-size:12px;line-height:1.8}
+body.light{--bg:#edf1ff;--panel:rgba(255,255,255,.9);--text:#18213a;--muted:#64708e;--line:rgba(24,33,58,.13)}
+body.light .board-wrap{background:#f7f9ff}body.light input,body.light select{background:#fff;color:#18213a}
+body.neon{--purple:#00f5d4;--cyan:#f15bb5}
+body.cyber{--purple:#f72585;--cyan:#4cc9f0}
+@media(max-width:760px){.game-layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){body{padding:9px}.hero{padding:21px}.side{grid-template-columns:1fr}.stats{gap:7px}.stat{padding:10px}.stat strong{font-size:20px}}
 </style>
 </head>
-
 <body>
 <div class="app">
-
 <header class="top">
-  <div class="brand">
-    <div class="logo">〰</div>
-    <div>
-      <h1>SNAKE WORLD</h1>
-      <small>PLAY • EVOLVE • CONQUER</small>
-    </div>
-  </div>
-  <button class="btn" id="langBtn">EN</button>
+ <div class="brand"><div class="logo">〰</div><div><h1>SNAKE WORLD</h1><small>PLAY • EVOLVE • CONQUER</small></div></div>
+ <button class="btn" id="langBtn">EN</button>
 </header>
 
 <section id="home" class="screen active">
-  <div class="hero">
-    <h2>
-      <span class="gradient">SNAKE</span><br>
-      WORLD
-    </h2>
-
-    <p class="sub">
-      وارد دنیایی از رنگ، سرعت و چالش شو.
-      مار خودت را بساز، آیتم‌ها را جمع کن
-      و رکورد تازه‌ای ثبت کن.
-    </p>
-
-    <div class="toolbar">
-      <button class="btn primary" id="playBtn">
-        ▶ شروع بازی
-      </button>
-
-      <button class="btn" id="customBtn">
-        ✦ شخصی‌سازی
-      </button>
-
-      <button class="btn" id="recordsBtn">
-        ♛ رکوردها
-      </button>
-    </div>
+ <div class="hero">
+  <h2><span class="gradient">SNAKE</span><br>WORLD</h2>
+  <p class="sub">به دنیای موش‌های رنگی خوش اومدی! موش‌ها رو شکار کن، مار خودتا رو بزرگ‌تر کن و رکورد تازه‌ای ثبت کن.</p>
+  <div class="toolbar">
+   <button class="btn primary" id="playBtn"> شروع بازی</button>
+   <button class="btn" id="customBtn"> شخصی‌سازی</button>
+   <button class="btn" id="recordsBtn"> رکوردها</button>
   </div>
-
-  <div class="stats">
-    <div class="stat">
-      <strong id="homeBest">0</strong>
-      <span>بهترین امتیاز</span>
-    </div>
-
-    <div class="stat">
-      <strong id="gamesPlayed">0</strong>
-      <span>بازی انجام‌شده</span>
-    </div>
-
-    <div class="stat">
-      <strong>5</strong>
-      <span>حالت بازی</span>
-    </div>
-  </div>
-
-  <div class="section-title">
-    <h3>انتخاب حالت بازی</h3>
-  </div>
-
-  <div class="cards" id="modeCards">
-    <button class="mode selected" data-mode="classic">
-      <b>🐍 Classic</b>
-      <span>کلاسیک و متعادل</span>
-    </button>
-
-    <button class="mode" data-mode="endless">
-      <b>∞ Endless</b>
-      <span>بدون محدودیت مرحله</span>
-    </button>
-
-    <button class="mode" data-mode="challenge">
-      <b>⏱ Challenge</b>
-      <span>چالش زمان‌دار</span>
-    </button>
-
-    <button class="mode" data-mode="survival">
-      <b>⚡ Survival</b>
-      <span>حالت بقا</span>
-    </button>
-
-    <button class="mode" data-mode="speed">
-      <b>🚀 Speed Run</b>
-      <span>رقابت سرعتی</span>
-    </button>
-  </div>
+ </div>
+ <div class="stats">
+  <div class="stat"><strong id="homeBest">0</strong><span>بهترین امتیاز</span></div>
+  <div class="stat"><strong id="gamesPlayed">0</strong><span>بازی انجام‌شده</span></div>
+  <div class="stat"><strong id="homeFoods">0</strong><span>موش شکارشده</span></div>
+ </div>
+ <div class="section-title"><h3>انتخاب حالت بازی</h3></div>
+ <div class="cards" id="modeCards">
+  <button class="mode selected" data-mode="classic"><b>🐍 Classic</b><span>کلاسیک شبیه نوکیا</span></button>
+  <button class="mode" data-mode="endless"><b>∞ Endless</b><span>عبور از دیواره‌ها</span></button>
+  <button class="mode" data-mode="challenge"><b>⏱ Challenge</b><span>۹۰ ثانیه زمان</span></button>
+  <button class="mode" data-mode="survival"><b>⚡ Survival</b><span>با موانع</span></button>
+  <button class="mode" data-mode="speed"><b>🚀 Speed Run</b><span>سرعت بیشتر</span></button>
+ </div>
+ <p class="muted" style="text-align:center;margin-top:22px">Created by <b>Amir Drostkar</b></p>
 </section>
 
 <section id="game" class="screen">
-  <div class="game-layout">
-
-    <div class="gamebox">
-      <div class="hud">
-        <div class="stat">
-          <strong id="score">0</strong>
-          <span>امتیاز</span>
-        </div>
-
-        <div class="stat">
-          <strong id="best">0</strong>
-          <span>رکورد</span>
-        </div>
-
-        <div class="stat">
-          <strong id="timer">∞</strong>
-          <span>زمان</span>
-        </div>
-      </div>
-
-      <div class="board-wrap" id="boardWrap">
-        <canvas id="board" width="600" height="600"></canvas>
-
-        <div class="overlay" id="overlay">
-          <div>
-            <h2 id="overTitle">بازی متوقف شد</h2>
-            <p id="overText"></p>
-
-            <button class="btn primary" id="overlayMain">
-              ادامه
-            </button>
-
-            <button class="btn" id="overlayHome">
-              خانه
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <button class="btn primary" id="pauseBtn">Ⅱ توقف</button>
-        <button class="btn" id="restartBtn">↻ شروع مجدد</button>
-        <button class="btn" id="homeBtn">⌂ خانه</button>
-      </div>
-    </div>
-
-    <aside class="side">
-      <div class="panel">
-        <h3>کنترل لمسی</h3>
-
-        <div class="controlpad">
-          <button class="btn" data-dir="up">↑</button>
-          <button class="btn" data-dir="left">←</button>
-          <button class="btn" data-dir="down">↓</button>
-          <button class="btn" data-dir="right">→</button>
-        </div>
-
-        <p>برای حرکت، انگشتت را روی صفحه بکش.</p>
-      </div>
-
-      <div class="panel">
-        <h3>آیتم‌ها</h3>
-        <div class="list">
-          <div class="listrow">🟢 غذای معمولی <b>+10</b></div>
-          <div class="listrow">🌟 طلایی <b>+50</b></div>
-          <div class="listrow">⚡ سرعت <b>موقت</b></div>
-          <div class="listrow">🛡 سپر <b>محافظت</b></div>
-          <div class="listrow">✖ چندبرابر <b>×2</b></div>
-        </div>
-      </div>
-    </aside>
+ <div class="game-layout">
+  <div class="gamebox">
+   <div class="hud">
+    <div class="stat"><strong id="score">0</strong><span>امتیاز</span></div>
+    <div class="stat"><strong id="best">0</strong><span>رکورد</span></div>
+    <div class="stat"><strong id="timer">∞</strong><span>زمان</span></div>
+   </div>
+   <div class="board-wrap" id="boardWrap">
+    <canvas id="board" width="600" height="600"></canvas>
+    <div class="overlay" id="overlay"><div><h2 id="overTitle">بازی متوقف شد</h2><p id="overText"></p><button class="btn primary" id="overlayMain">ادامه</button> <button class="btn" id="overlayHome">خانه</button></div></div>
+   </div>
+   <div class="toolbar">
+    <button class="btn primary" id="pauseBtn">Ⅱ توقف</button><button class="btn" id="restartBtn">↻ شروع مجدد</button><button class="btn" id="homeBtn">⌂ خانه</button>
+   </div>
   </div>
+  <aside class="side">
+   <div class="panel"><h3>کنترل لمسی</h3><div class="controlpad">
+    <span></span><button class="btn" data-dir="up">↑</button><span></span>
+    <button class="btn" data-dir="left">←</button><button class="btn" data-dir="down">↓</button><button class="btn" data-dir="right">→</button>
+   </div><p class="muted">از دکمه‌ها یا کشیدن انگشت روی زمین بازی استفاده کن. در کامپیوتر هم کلیدهای جهت‌دار کار می‌کنند.</p></div>
+   <div class="panel"><h3>راهنمای موش‌ها</h3><div class="list">
+    <div class="listrow">🐭 موش معمولی <b>+10</b></div>
+    <div class="listrow">🐁 موش طلایی <b>+50</b></div>
+    <div class="listrow">⚡ سرعت <b>موقت</b></div>
+    <div class="listrow">🛡 سپر <b>محافظت</b></div>
+   </div></div>
+  </aside>
+ </div>
 </section>
 
 <section id="settings" class="screen">
-  <div class="panel">
-    <h3>تنظیمات و شخصی‌سازی</h3>
-
-    <div class="colorrow">
-      <div class="field">
-        <label>رنگ بدن مار</label>
-        <input type="color" id="bodyColor" value="#55e6a5">
-      </div>
-
-      <div class="field">
-        <label>رنگ سر مار</label>
-        <input type="color" id="headColor" value="#b7ffdf">
-      </div>
-
-      <div class="field">
-        <label>رنگ غذا</label>
-        <input type="color" id="foodColor" value="#ff5d8f">
-      </div>
-
-      <div class="field">
-        <label>پس‌زمینه</label>
-        <input type="color" id="bgColor" value="#080d1b">
-      </div>
-    </div>
-
-    <div class="field">
-      <label>کد HEX</label>
-      <input id="hexInput" placeholder="#8B5CF6">
-      <button class="btn" id="applyHex">اعمال رنگ</button>
-    </div>
-
-    <div class="field">
-      <label>تم محیط</label>
-      <select id="theme">
-        <option value="dark">Dark</option>
-        <option value="light">Light</option>
-        <option value="neon">Neon</option>
-        <option value="cyber">Cyberpunk</option>
-        <option value="gradient-theme">Gradient</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>سرعت بازی</label>
-      <input type="range" id="speed" min="4" max="15" value="7">
-    </div>
-
-    <div class="field">
-      <label>اندازه زمین</label>
-      <select id="gridSize">
-        <option value="18">کوچک</option>
-        <option value="22" selected>متوسط</option>
-        <option value="28">بزرگ</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>اندازه مار</label>
-      <select id="snakeSize">
-        <option value="3">کوچک</option>
-        <option value="4" selected>متوسط</option>
-        <option value="6">بزرگ</option>
-      </select>
-    </div>
-
-    <div class="toggle">
-      <span>افکت‌های صوتی</span>
-      <input type="checkbox" id="sound" checked>
-    </div>
-
-    <div class="toggle">
-      <span>موسیقی پس‌زمینه</span>
-      <input type="checkbox" id="music">
-    </div>
-
-    <div class="toggle">
-      <span>موانع متحرک</span>
-      <input type="checkbox" id="obstacles" checked>
-    </div>
-
-    <div class="field">
-      <label>حساسیت لمس</label>
-      <input type="range" id="sensitivity" min="12" max="65" value="28">
-    </div>
-
-    <button class="btn primary" id="saveSettings">
-      ذخیره تنظیمات
-    </button>
+ <div class="panel">
+  <h3>تنظیمات و شخصی‌سازی</h3>
+  <div class="colorrow">
+   <div class="field"><label>رنگ بدن مار</label><input type="color" id="bodyColor" value="#55e6a5"></div>
+   <div class="field"><label>رنگ سر مار</label><input type="color" id="headColor" value="#b7ffdf"></div>
+   <div class="field"><label>رنگ موش</label><input type="color" id="foodColor" value="#ff668c"></div>
+   <div class="field"><label>پس‌زمینه زمین</label><input type="color" id="bgColor" value="#080d1b"></div>
   </div>
+  <div class="field"><label>تم محیط</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="neon">Neon</option><option value="cyber">Cyberpunk</option></select></div>
+  <div class="field"><label>سرعت بازی</label><input type="range" id="speed" min="4" max="15" value="7"></div>
+  <div class="field"><label>اندازه زمین</label><select id="gridSize"><option value="18">کوچک</option><option value="22" selected>متوسط</option><option value="28">بزرگ</option></select></div>
+  <div class="field"><label>صدای بازی</label><select id="sound"><option value="on">روشن</option><option value="off">خاموش</option></select></div>
+  <button class="btn primary" id="saveSettings">ذخیره تنظیمات</button>
+  <button class="btn" id="settingsHome">بازگشت</button>
+ </div>
 </section>
 
 <section id="records" class="screen">
-  <div class="panel">
-    <h3>رکوردها و دستاوردها</h3>
-
-    <div class="stats">
-      <div class="stat">
-        <strong id="recordBest">0</strong>
-        <span>بهترین امتیاز</span>
-      </div>
-
-      <div class="stat">
-        <strong id="recordTotal">0</strong>
-        <span>کل بازی‌ها</span>
-      </div>
-
-      <div class="stat">
-        <strong id="recordFoods">0</strong>
-        <span>غذاهای خورده‌شده</span>
-      </div>
-    </div>
-
-    <div id="recentList" class="list"></div>
-  </div>
+ <div class="panel"><h3>رکوردها و دستاوردها</h3>
+  <div class="stats"><div class="stat"><strong id="recordBest">0</strong><span>بهترین امتیاز</span></div><div class="stat"><strong id="recordTotal">0</strong><span>کل بازی‌ها</span></div><div class="stat"><strong id="recordFoods">0</strong><span>موش‌ها</span></div></div>
+  <h3>بازی‌های اخیر</h3><div id="recentList" class="list"></div><button class="btn" id="recordsHome" style="margin-top:12px">بازگشت</button>
+ </div>
 </section>
+<footer class="muted" style="text-align:center;padding:20px">SNAKE WORLD · Created by Amir Drostkar</footer>
+</div>
 
-  </div>
 <script>
-(() => {
-"use strict";
-
-const $ = id => document.getElementById(id);
-
-const canvas = $("board");
-const ctx = canvas.getContext("2d");
-
-const defaults = {
-  bodyColor:"#55e6a5",
-  headColor:"#b7ffdf",
-  foodColor:"#ff5d8f",
-  bgColor:"#080d1b",
-  theme:"dark",
-  speed:7,
-  gridSize:22,
-  snakeSize:4,
-  sound:true,
-  music:false,
-  obstacles:true,
-  sensitivity:28
-};
-
-let cfg = {...defaults};
-
-let state = "ready";
-let mode = "classic";
-
-let snake = [];
-let food = null;
-let items = [];
-let walls = [];
-
-let score = 0;
-let foodCount = 0;
-let timeLeft = 90;
-
-let dir = {x:1,y:0};
-let nextDir = {x:1,y:0};
-
-let raf = 0;
-let last = 0;
-let acc = 0;
-
-let boost = 0;
-let slow = 0;
-let shield = 0;
-let mult = 1;
-let multTime = 0;
-let invisible = 0;
-
-let particles = [];
-let audioCtx = null;
-let musicTimer = null;
-
-let data = {
-  best:0,
-  games:0,
-  foods:0,
-  history:[]
-};
-
-try {
-  data = {
-    ...data,
-    ...JSON.parse(localStorage.getItem("snakeWorldData") || "{}")
-  };
-} catch(e) {}
-
-function saveData(){
-  localStorage.setItem("snakeWorldData",JSON.stringify(data));
-}
-
-function saveSettings(){
-  localStorage.setItem("snakeWorldSettings",JSON.stringify(cfg));
-}
-
-function loadSettings(){
-  try {
-    cfg = {
-      ...defaults,
-      ...JSON.parse(localStorage.getItem("snakeWorldSettings") || "{}")
-    };
-  } catch(e) {
-    cfg = {...defaults};
-  }
-
-  Object.keys(defaults).forEach(key=>{
-    const el = $(key);
-    if(!el) return;
-
-    if(el.type === "checkbox"){
-      el.checked = !!cfg[key];
-    } else {
-      el.value = cfg[key];
-    }
-  });
-
-  applyTheme();
-}
-
-function applyTheme(){
-  document.body.classList.remove("light","neon","cyber");
-
-  if(cfg.theme === "light"){
-    document.body.classList.add("light");
-  }
-
-  if(cfg.theme === "neon"){
-    document.body.classList.add("neon");
-  }
-
-  if(cfg.theme === "cyber"){
-    document.body.classList.add("cyber");
-  }
-
-  if(cfg.theme === "gradient-theme"){
-    document.body.classList.add("neon");
-  }
-}
-
-function show(id){
-  document.querySelectorAll(".screen").forEach(el=>{
-    el.classList.remove("active");
-  });
-
-  $(id).classList.add("active");
-}
-
-function home(){
-  stopLoop();
-  state = "ready";
-  hideOverlay();
-  updateHome();
-  show("home");
-}
-
+(()=>{'use strict';
+const $=id=>document.getElementById(id), canvas=$('board'),ctx=canvas.getContext('2d');
+const defaults={bodyColor:'#55e6a5',headColor:'#b7ffdf',foodColor:'#ff668c',bgColor:'#080d1b',theme:'dark',speed:7,gridSize:22,sound:true};
+let cfg={...defaults},mode='classic',state='ready',snake=[],food=null,items=[],walls=[],score=0,foodCount=0,timeLeft=90;
+let dir={x:1,y:0},nextDir={x:1,y:0},raf=0,last=0,acc=0,boost=0,shield=0,particles=[],audioCtx=null;
+let data={best:0,games:0,foods:0,history:[]};
+try{data={...data,...JSON.parse(localStorage.getItem('snakeWorldData')||'{}')};}catch(e){}
+try{cfg={...cfg,...JSON.parse(localStorage.getItem('snakeWorldSettings')||'{}')};}catch(e){}
+function saveData(){try{localStorage.setItem('snakeWorldData',JSON.stringify(data));}catch(e){}}
+function saveCfg(){try{localStorage.setItem('snakeWorldSettings',JSON.stringify(cfg));}catch(e){}}
+function N(){return Number(cfg.gridSize)}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
+function theme(){document.body.classList.remove('light','neon','cyber');if(['light','neon','cyber'].includes(cfg.theme))document.body.classList.add(cfg.theme)}
 function updateHome(){
-  $("homeBest").textContent = data.best;
-  $("gamesPlayed").textContent = data.games;
-
-  if($("recordBest")) $("recordBest").textContent = data.best;
-  if($("recordTotal")) $("recordTotal").textContent = data.games;
-  if($("recordFoods")) $("recordFoods").textContent = data.foods;
-
-  if($("recentList")){
-    $("recentList").innerHTML = "";
-
-    data.history.slice(0,10).forEach(item=>{
-      const row = document.createElement("div");
-      row.className = "listrow";
-      row.innerHTML =
-        `<span>${item.mode}</span>
-         <b>${item.score}</b>
-         <small>${item.date}</small>`;
-
-      $("recentList").appendChild(row);
-    });
-  }
+ $('homeBest').textContent=data.best;$('gamesPlayed').textContent=data.games;$('homeFoods').textContent=data.foods;
+ $('recordBest').textContent=data.best;$('recordTotal').textContent=data.games;$('recordFoods').textContent=data.foods;
+ $('recentList').innerHTML='';
+ data.history.slice(0,10).forEach(h=>{let r=document.createElement('div');r.className='listrow';let a=document.createElement('span'),b=document.createElement('b'),c=document.createElement('small');a.textContent=h.mode;b.textContent=h.score;c.textContent=h.date;r.append(a,b,c);$('recentList').append(r)});
 }
-
-function selectMode(selected){
-  mode = selected;
-
-  document.querySelectorAll(".mode").forEach(btn=>{
-    btn.classList.toggle(
-      "selected",
-      btn.dataset.mode === selected
-    );
-  });
+function loadSettings(){
+ Object.keys(defaults).forEach(k=>{let el=$(k);if(!el)return;if(k==='sound')el.value=cfg.sound?'on':'off';else el.value=cfg[k]});
+ theme();
 }
-
-function N(){
-  return Number(cfg.gridSize);
+function occupied(p){return snake.some(s=>s.x===p.x&&s.y===p.y)||walls.some(w=>w.x===p.x&&w.y===p.y)||items.some(i=>i.x===p.x&&i.y===p.y)}
+function randFree(){
+ const free=[];for(let y=0;y<N();y++)for(let x=0;x<N();x++){let p={x,y};if(!occupied(p)&&(!food||p.x!==food.x||p.y!==food.y))free.push(p)}
+ return free.length?free[Math.floor(Math.random()*free.length)]:null;
 }
-
-function randCell(){
-  return {
-    x:Math.floor(Math.random()*N()),
-    y:Math.floor(Math.random()*N())
-  };
-}
-
-function occupied(p){
-  return snake.some(s=>s.x===p.x && s.y===p.y) ||
-         walls.some(w=>w.x===p.x && w.y===p.y) ||
-         items.some(i=>i.x===p.x && i.y===p.y);
-}
-
 function placeFood(){
-  let p;
-
-  do {
-    p = randCell();
-  } while(
-    occupied(p) ||
-    snake.some(s=>s.x===p.x && s.y===p.y)
-  );
-
-  food = p;
+ const p=randFree();if(!p){food=null;endGame('آفرین! تمام زمین را پر کردی');return}
+ const palette=['#ff668c','#60a5fa','#facc15','#c084fc','#fb923c','#4ade80','#22d3ee'];
+ food={...p,color:Math.random()<.12?'#ffd166':palette[Math.floor(Math.random()*palette.length)],gold:Math.random()<.12};
 }
-
 function startGame(){
-  stopLoop();
-
-  show("game");
-
-  score = 0;
-  foodCount = 0;
-  timeLeft = 90;
-
-  snake = [
-    {x:Math.floor(N()/2),y:Math.floor(N()/2)},
-    {x:Math.floor(N()/2)-1,y:Math.floor(N()/2)},
-    {x:Math.floor(N()/2)-2,y:Math.floor(N()/2)}
-  ];
-
-  dir = {x:1,y:0};
-  nextDir = {x:1,y:0};
-
-  items = [];
-  walls = [];
-  particles = [];
-
-  boost = 0;
-  slow = 0;
-  shield = 0;
-  mult = 1;
-  multTime = 0;
-  invisible = 0;
-
-  if(mode==="survival" && cfg.obstacles){
-    for(let i=0;i<Math.floor(N()/3);i++){
-      const p = randCell();
-
-      if(!occupied(p)){
-        walls.push(p);
-      }
-    }
-  }
-
-  $("score").textContent = "0";
-  $("best").textContent = data.best;
-  $("timer").textContent = mode==="challenge" ? "90" : "∞";
-
-  hideOverlay();
-
-  state = "playing";
-  last = performance.now();
-  acc = 0;
-
-  playSound(520,.07);
-
-  raf = requestAnimationFrame(loop);
-
-  if(cfg.music){
-    startMusic();
-  }
+ stopLoop();show('game');score=0;foodCount=0;timeLeft=90;items=[];walls=[];particles=[];boost=0;shield=0;
+ const cx=Math.floor(N()/2),cy=Math.floor(N()/2);
+ snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];dir={x:1,y:0};nextDir={x:1,y:0};
+ if(mode==='survival'){for(let i=0;i<Math.floor(N()/3);i++){let p=randFree();if(p)walls.push(p)}}
+ food=null;placeFood();
+ $('score').textContent='0';$('best').textContent=data.best;$('timer').textContent=mode==='challenge'?'90':'∞';
+ hideOverlay();if(state==='over')return;state='playing';last=performance.now();acc=0;playSound(520,.06);raf=requestAnimationFrame(loop);
 }
-
-function stopLoop(){
-  if(raf){
-    cancelAnimationFrame(raf);
-  }
-
-  raf = 0;
-  stopMusic();
+function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0}
+function setDirection(x,y){if(state!=='playing'||(x===-dir.x&&y===-dir.y))return;nextDir={x,y}}
+function pause(){if(state!=='playing')return;state='paused';showOverlay('بازی متوقف شد','برای ادامه آماده‌ای؟','ادامه');stopLoop()}
+function resume(){if(state!=='paused')return;hideOverlay();state='playing';last=performance.now();raf=requestAnimationFrame(loop)}
+function hideOverlay(){$('overlay').classList.remove('show')}
+function showOverlay(title,msg,button){$('overTitle').textContent=title;$('overText').textContent=msg;$('overlayMain').textContent=button;$('overlay').classList.add('show')}
+function home(){stopLoop();state='ready';hideOverlay();updateHome();show('home')}
+function endGame(reason){
+ if(state!=='playing')return;state='over';stopLoop();let record=score>data.best;data.games++;data.foods+=foodCount;data.best=Math.max(data.best,score);
+ data.history.unshift({score,mode,date:new Date().toLocaleDateString('fa-IR')});data.history=data.history.slice(0,20);saveData();updateHome();$('best').textContent=data.best;
+ showOverlay(record?'🏆 رکورد جدید!':'پایان بازی',`امتیاز: ${score} · ${reason}`,'بازی دوباره');playSound(140,.22);
 }
-
-function setDirection(x,y){
-  if(state!=="playing") return;
-
-  if(x===-dir.x && y===-dir.y){
-    return;
-  }
-
-  nextDir = {x,y};
-}
-
-function pause(){
-  if(state!=="playing") return;
-
-  state = "paused";
-
-  showOverlay(
-    "بازی متوقف شد",
-    "برای ادامه آماده‌ای؟",
-    "Ⅱ",
-    "ادامه"
-  );
-
-  stopLoop();
-}
-
-function resume(){
-  if(state!=="paused") return;
-
-  hideOverlay();
-
-  state = "playing";
-  last = performance.now();
-
-  raf = requestAnimationFrame(loop);
-
-  if(cfg.music){
-    startMusic();
-  }
-}
-
-function showOverlay(title,msg,icon,button){
-  $("overTitle").textContent = title;
-  $("overText").textContent = msg;
-
-  if($("overIcon")){
-    $("overIcon").textContent = icon;
-  }
-
-  $("overlayMain").textContent = button;
-  $("overlay").classList.add("show");
-}
-
-function hideOverlay(){
-  $("overlay").classList.remove("show");
-}
-
-function endGame(reason="برخورد!"){
-  if(state!=="playing") return;
-
-  state = "over";
-  stopLoop();
-
-  const isBest = score > data.best;
-
-  data.games++;
-  data.foods += foodCount;
-  data.best = Math.max(data.best,score);
-
-  data.history.unshift({
-    score,
-    mode,
-    date:new Date().toLocaleDateString()
-  });
-
-  data.history = data.history.slice(0,20);
-
-  saveData();
-  updateHome();
-
-  $("best").textContent = data.best;
-
-  showOverlay(
-    "پایان بازی",
-    `امتیاز: ${score} · ${reason}${isBest?" · رکورد جدید!":""}`,
-    isBest?"🏆":"✦",
-    "بازی دوباره"
-  );
-
-  playSound(110,.28);
-}
-
 function step(){
-  dir = {...nextDir};
-
-  let head = {
-    x:snake[0].x+dir.x,
-    y:snake[0].y+dir.y
-  };
-
-  if(mode==="endless"){
-    head.x = (head.x+N())%N();
-    head.y = (head.y+N())%N();
-  } else if(
-    head.x<0 ||
-    head.y<0 ||
-    head.x>=N() ||
-    head.y>=N()
-  ){
-    if(shield>0){
-      shield=0;
-      head.x=(head.x+N())%N();
-      head.y=(head.y+N())%N();
-    } else {
-      return endGame("خروج از محدوده");
-    }
-  }
-
-  const ate = food &&
-    head.x===food.x &&
-    head.y===food.y;
-
-  const body = ate ? snake : snake.slice(0,-1);
-
-  if(body.some(s=>s.x===head.x && s.y===head.y)){
-    if(shield>0){
-      shield=0;
-    } else {
-      return endGame("برخورد با خودت");
-    }
-  }
-
-  if(walls.some(w=>w.x===head.x && w.y===head.y)){
-    if(shield>0){
-      shield=0;
-      walls=walls.filter(
-        w=>w.x!==head.x || w.y!==head.y
-      );
-    } else {
-      return endGame("برخورد با مانع");
-    }
-  }
-
-  snake.unshift(head);
-
-  if(ate){
-    score += 10*mult;
-    foodCount++;
-
-    playSound(660,.06);
-
-    burst(
-      (head.x+.5)*600/N(),
-      (head.y+.5)*600/N()
-    );
-
-    placeFood();
-
-    if(foodCount%5===0){
-      spawnItem();
-    }
-
-    if(
-      mode==="survival" &&
-      cfg.obstacles &&
-      foodCount%4===0
-    ){
-      const p=randCell();
-
-      if(!occupied(p)){
-        walls.push(p);
-      }
-    }
-  } else {
-    snake.pop();
-  }
-
-  const ix = items.findIndex(
-    i=>i.x===head.x && i.y===head.y
-  );
-
-  if(ix>=0){
-    const item=items.splice(ix,1)[0];
-    applyItem(item.type);
-  }
+ dir={...nextDir};let head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+ if(mode==='endless'){head.x=(head.x+N())%N();head.y=(head.y+N())%N()}
+ else if(head.x<0||head.y<0||head.x>=N()||head.y>=N()){if(shield){shield=0;head.x=(head.x+N())%N();head.y=(head.y+N())%N()}else return endGame('خروج از محدوده')}
+ const ate=!!food&&head.x===food.x&&head.y===food.y;
+ const body=ate?snake:snake.slice(0,-1);
+ if(body.some(s=>s.x===head.x&&s.y===head.y)){if(shield)shield=0;else return endGame('برخورد با خودت')}
+ if(walls.some(w=>w.x===head.x&&w.y===head.y)){if(shield){shield=0;walls=walls.filter(w=>w.x!==head.x||w.y!==head.y)}else return endGame('برخورد با مانع')}
+ snake.unshift(head);
+ if(ate){
+  const points=food.gold?50:10;score+=points;foodCount++;playSound(food.gold?880:660,.07);burst((head.x+.5)*600/N(),(head.y+.5)*600/N(),food.color);
+  food=null;placeFood();
+  if(foodCount%5===0)spawnItem();
+  if(mode==='survival'&&foodCount%4===0){let p=randFree();if(p)walls.push(p)}
+ }else snake.pop();
+ const ix=items.findIndex(i=>i.x===head.x&&i.y===head.y);if(ix>=0){let it=items.splice(ix,1)[0];if(it.type==='speed')boost=5000;if(it.type==='shield')shield=1;if(it.type==='bonus')score+=100;playSound(900,.1)}
 }
-
-function spawnItem(){
-  const types=[
-    "gold",
-    "speed",
-    "slow",
-    "shield",
-    "double",
-    "invisible",
-    "bonus"
-  ];
-
-  let p;
-
-  do {
-    p=randCell();
-  } while(
-    occupied(p) ||
-    (food && food.x===p.x && food.y===p.y)
-  );
-
-  items.push({
-    ...p,
-    type:types[Math.floor(Math.random()*types.length)],
-    life:8500
-  });
-}
-
-function applyItem(type){
-  const names={
-    gold:"غذای طلایی +50",
-    speed:"افزایش سرعت",
-    slow:"کاهش سرعت",
-    shield:"سپر فعال شد",
-    double:"امتیاز ×2",
-    invisible:"نامرئی موقت",
-    bonus:"امتیاز +100"
-  };
-
-  if(type==="gold") score+=50;
-  if(type==="speed") boost=5000;
-  if(type==="slow") slow=5000;
-  if(type==="shield") shield=1;
-
-  if(type==="double"){
-    mult=2;
-    multTime=8000;
-  }
-
-  if(type==="invisible"){
-    invisible=5000;
-  }
-
-  if(type==="bonus"){
-    score+=100;
-  }
-
-  $("score").textContent=score;
-  playSound(880,.12);
-}
-
+function spawnItem(){let p=randFree();if(p)items.push({...p,type:Math.random()<.5?'speed':Math.random()<.5?'shield':'bonus',life:7000})}
 function loop(now){
-  if(state!=="playing") return;
-
-  const dt=Math.min(now-last,80);
-  last=now;
-
-  if(mode==="challenge"){
-    timeLeft-=dt/1000;
-
-    $("timer").textContent=Math.max(
-      0,
-      Math.ceil(timeLeft)
-    );
-
-    if(timeLeft<=0){
-      endGame("زمان تمام شد");
-      return;
-    }
-  }
-
-  if(multTime>0){
-    multTime-=dt;
-
-    if(multTime<=0){
-      mult=1;
-    }
-  }
-
-  if(boost>0) boost-=dt;
-  if(slow>0) slow-=dt;
-  if(invisible>0) invisible-=dt;
-
-  items.forEach(i=>i.life-=dt);
-  items=items.filter(i=>i.life>0);
-
-  let base=1000/(
-    Number(cfg.speed)+
-    (mode==="speed"?4:0)+
-    Math.floor(score/100)
-  );
-
-  if(boost>0) base*=.65;
-  if(slow>0) base*=1.45;
-
-  acc+=dt;
-
-  while(acc>=base){
-    step();
-    acc-=base;
-
-    if(state!=="playing") return;
-  }
-
-  draw();
-
-  raf=requestAnimationFrame(loop);
+ if(state!=='playing')return;let dt=Math.min(now-last,80);last=now;
+ if(mode==='challenge'){timeLeft-=dt/1000;$('timer').textContent=Math.max(0,Math.ceil(timeLeft));if(timeLeft<=0)return endGame('زمان تمام شد')}
+ if(boost>0)boost-=dt;items.forEach(i=>i.life-=dt);items=items.filter(i=>i.life>0);
+ let speed=Number(cfg.speed)+(mode==='speed'?4:0)+Math.floor(score/100);let interval=1000/Math.min(22,speed);if(boost>0)interval*=.65;
+ acc+=dt;while(acc>=interval){step();acc-=interval;if(state!=='playing')return}
+ draw();raf=requestAnimationFrame(loop);
 }
-
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function drawMouse(x,y,size,color){
+ ctx.save();ctx.translate(x,y);let s=size;
+ // tail
+ ctx.strokeStyle='#f9a8b8';ctx.lineWidth=s*.075;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-s*.12,s*.18);ctx.quadraticCurveTo(-s*.55,s*.45,-s*.43,s*.72);ctx.stroke();
+ // ears and body
+ ctx.fillStyle='#f8a3b8';ctx.beginPath();ctx.arc(-s*.23,-s*.27,s*.22,0,Math.PI*2);ctx.arc(s*.23,-s*.27,s*.22,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(0,0,s*.34,s*.43,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#ffd0dc';ctx.beginPath();ctx.arc(-s*.23,-s*.27,s*.11,0,Math.PI*2);ctx.arc(s*.23,-s*.27,s*.11,0,Math.PI*2);ctx.fill();
+ // eyes, nose, whiskers
+ ctx.fillStyle='#172033';ctx.beginPath();ctx.arc(-s*.12,-s*.07,s*.045,0,Math.PI*2);ctx.arc(s*.12,-s*.07,s*.045,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#fb7185';ctx.beginPath();ctx.arc(0,s*.17,s*.07,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#f9a8b8';ctx.lineWidth=s*.025;ctx.beginPath();ctx.moveTo(-s*.12,s*.18);ctx.lineTo(-s*.38,s*.12);ctx.moveTo(s*.12,s*.18);ctx.lineTo(s*.38,s*.12);ctx.stroke();
+ ctx.restore();
+}
 function draw(){
-  const n=N();
-  const cell=600/n;
-
-  ctx.clearRect(0,0,600,600);
-
-  ctx.fillStyle=cfg.bgColor;
-  ctx.fillRect(0,0,600,600);
-
-  ctx.strokeStyle="rgba(180,200,255,.055)";
-  ctx.lineWidth=1;
-
-  for(let i=0;i<=n;i++){
-    ctx.beginPath();
-    ctx.moveTo(i*cell,0);
-    ctx.lineTo(i*cell,600);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(0,i*cell);
-    ctx.lineTo(600,i*cell);
-    ctx.stroke();
-  }
-
-  walls.forEach(w=>{
-    ctx.fillStyle="#f97316";
-    roundRect(
-      w.x*cell+3,
-      w.y*cell+3,
-      cell-6,
-      cell-6,
-      6
-    );
-    ctx.fill();
-  });
-
-  if(food){
-    ctx.shadowBlur=18;
-    ctx.shadowColor=cfg.foodColor;
-    ctx.fillStyle=cfg.foodColor;
-
-    ctx.beginPath();
-    ctx.arc(
-      (food.x+.5)*cell,
-      (food.y+.5)*cell,
-      cell*.29,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fill();
-    ctx.shadowBlur=0;
-  }
-
-  const colors={
-    gold:"#ffd166",
-    speed:"#fb923c",
-    slow:"#60a5fa",
-    shield:"#38bdf8",
-    double:"#c084fc",
-    invisible:"#a3e635",
-    bonus:"#f472b6"
-  };
-
-  const icons={
-    gold:"★",
-    speed:"⚡",
-    slow:"◷",
-    shield:"◇",
-    double:"×2",
-    invisible:"◌",
-    bonus:"+"
-  };
-
-  items.forEach(it=>{
-    ctx.fillStyle=colors[it.type];
-    ctx.shadowColor=colors[it.type];
-    ctx.shadowBlur=15;
-
-    ctx.beginPath();
-    ctx.arc(
-      (it.x+.5)*cell,
-      (it.y+.5)*cell,
-      cell*.32,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fill();
-    ctx.shadowBlur=0;
-
-    ctx.fillStyle="#101426";
-    ctx.font=`bold ${cell*.36}px sans-serif`;
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-
-    ctx.fillText(
-      icons[it.type],
-      (it.x+.5)*cell,
-      (it.y+.5)*cell
-    );
-  });
-
-  snake.forEach((s,i)=>{
-    const x=s.x*cell+2;
-    const y=s.y*cell+2;
-    const w=cell-4;
-
-    ctx.globalAlpha=invisible>0?.38:1;
-
-    ctx.fillStyle=i===0?cfg.headColor:cfg.bodyColor;
-    ctx.shadowColor=ctx.fillStyle;
-    ctx.shadowBlur=i===0?16:8;
-
-    roundRect(x,y,w,w,cell*.28);
-    ctx.fill();
-
-    ctx.shadowBlur=0;
-
-    if(i===0){
-      ctx.fillStyle="#101426";
-
-      ctx.beginPath();
-      ctx.arc(
-        x+w*.65,
-        y+w*.34,
-        Math.max(2,cell*.055),
-        0,
-        Math.PI*2
-      );
-
-      ctx.arc(
-        x+w*.65,
-        y+w*.68,
-        Math.max(2,cell*.055),
-        0,
-        Math.PI*2
-      );
-
-      ctx.fill();
-    }
-  });
-
-  ctx.globalAlpha=1;
-
-  particles.forEach(p=>{
-    ctx.globalAlpha=Math.max(0,p.life/500);
-    ctx.fillStyle=p.color;
-
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fill();
-
-    p.x+=p.vx;
-    p.y+=p.vy;
-    p.life-=18;
-  });
-
-  ctx.globalAlpha=1;
-  particles=particles.filter(p=>p.life>0);
-
-  $("score").textContent=score;
+ const n=N(),cell=600/n;ctx.clearRect(0,0,600,600);ctx.fillStyle=cfg.bgColor;ctx.fillRect(0,0,600,600);
+ ctx.strokeStyle='rgba(180,200,255,.055)';ctx.lineWidth=1;
+ for(let i=0;i<=n;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,600);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(600,i*cell);ctx.stroke()}
+ walls.forEach(w=>{ctx.fillStyle='#f97316';roundRect(w.x*cell+3,w.y*cell+3,cell-6,cell-6,6);ctx.fill()});
+ if(food){let pulse=1+Math.sin(performance.now()*.008)*.06;ctx.shadowBlur=18;ctx.shadowColor=food.color;drawMouse((food.x+.5)*cell,(food.y+.5)*cell,cell*.9*pulse,food.color);ctx.shadowBlur=0;if(food.gold){ctx.fillStyle='#fff1a8';ctx.font=`bold ${cell*.25}px sans-serif`;ctx.textAlign='center';ctx.fillText('★',(food.x+.5)*cell,(food.y+.5)*cell-cell*.48)}}
+ items.forEach(it=>{ctx.fillStyle=it.type==='speed'?'#fb923c':it.type==='shield'?'#38bdf8':'#f472b6';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=14;ctx.beginPath();ctx.arc((it.x+.5)*cell,(it.y+.5)*cell,cell*.3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#101426';ctx.font=`bold ${cell*.35}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(it.type==='speed'?'⚡':it.type==='shield'?'◇':'+',(it.x+.5)*cell,(it.y+.5)*cell)});
+ snake.forEach((s,i)=>{let x=s.x*cell+2,y=s.y*cell+2,w=cell-4;ctx.fillStyle=i===0?cfg.headColor:cfg.bodyColor;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=i===0?15:6;roundRect(x,y,w,w,cell*.28);ctx.fill();ctx.shadowBlur=0;if(i===0){ctx.fillStyle='#142033';let ex=dir.x===1?.68:dir.x===-1?.32:.5,ey=dir.y===1?.68:dir.y===-1?.32:.5;if(dir.x!==0){ctx.beginPath();ctx.arc(x+w*ex,y+w*.32,Math.max(2,cell*.055),0,Math.PI*2);ctx.arc(x+w*ex,y+w*.68,Math.max(2,cell*.055),0,Math.PI*2);ctx.fill()}else{ctx.beginPath();ctx.arc(x+w*.32,y+w*ey,Math.max(2,cell*.055),0,Math.PI*2);ctx.arc(x+w*.68,y+w*ey,Math.max(2,cell*.055),0,Math.PI*2);ctx.fill()}}});
+ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/450);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();p.x+=p.vx;p.y+=p.vy;p.life-=18});ctx.globalAlpha=1;particles=particles.filter(p=>p.life>0);$('score').textContent=score;
 }
+function burst(x,y,color){for(let i=0;i<15;i++){let a=Math.random()*Math.PI*2,v=1+Math.random()*4;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:450,r:2+Math.random()*3,color})}}
+function playSound(freq,dur){if(!cfg.sound)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.06,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}}
 
-function roundRect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,r);
-}
-
-function burst(x,y){
-  for(let i=0;i<16;i++){
-    const a=Math.random()*Math.PI*2;
-    const v=1+Math.random()*4;
-
-    particles.push({
-      x,y,
-      vx:Math.cos(a)*v,
-      vy:Math.sin(a)*v,
-      life:500,
-      r:2+Math.random()*3,
-      color:[
-        "#f472b6",
-        "#67e8f9",
-        "#fde68a",
-        "#a78bfa"
-      ][i%4]
-    });
-  }
-}
-
-function playSound(freq,dur){
-  if(!cfg.sound) return;
-
-  try {
-    audioCtx=audioCtx ||
-      new(window.AudioContext||window.webkitAudioContext)();
-
-    const o=audioCtx.createOscillator();
-    const g=audioCtx.createGain();
-
-    o.frequency.value=freq;
-    o.type="sine";
-
-    g.gain.setValueAtTime(
-      .07,
-      audioCtx.currentTime
-    );
-
-    g.gain.exponentialRampToValueAtTime(
-      .001,
-      audioCtx.currentTime+dur
-    );
-
-    o.connect(g);
-    g.connect(audioCtx.destination);
-
-    o.start();
-    o.stop(audioCtx.currentTime+dur);
-  } catch(e){}
-}
-
-function startMusic(){
-  stopMusic();
-
-  const notes=[220,277,330,277];
-  let i=0;
-
-  musicTimer=setInterval(()=>{
-    if(state==="playing"){
-      playSound(notes[i++%notes.length],.12);
-    }
-  },550);
-}
-
-function stopMusic(){
-  if(musicTimer){
-    clearInterval(musicTimer);
-  }
-
-  musicTimer=null;
-}
-
-/* دکمه‌ها */
-
-$("playBtn").onclick=startGame;
-
-$("customBtn").onclick=()=>{
-  loadSettings();
-  show("settings");
-};
-
-$("recordsBtn").onclick=()=>{
-  updateHome();
-  show("records");
-};
-
-$("homeBtn").onclick=home;
-
-$("pauseBtn").onclick=pause;
-
-$("restartBtn").onclick=startGame;
-
-$("overlayMain").onclick=()=>{
-  if(state==="paused"){
-    resume();
-  } else {
-    startGame();
-  }
-};
-
-$("overlayHome").onclick=home;
-
-/* انتخاب حالت بازی */
-
-document.querySelectorAll(".mode").forEach(btn=>{
-  btn.onclick=()=>{
-    selectMode(btn.dataset.mode);
-  };
-});
-
-/* کنترل لمسی */
-
-document.querySelectorAll("[data-dir]").forEach(btn=>{
-  const map={
-    up:[0,-1],
-    down:[0,1],
-    left:[-1,0],
-    right:[1,0]
-  };
-
-  btn.addEventListener("pointerdown",e=>{
-    e.preventDefault();
-    setDirection(...map[btn.dataset.dir]);
-  });
-});
-
-/* کنترل کیبورد */
-
-document.addEventListener("keydown",e=>{
-  const map={
-    ArrowUp:[0,-1],
-    w:[0,-1],
-    ArrowDown:[0,1],
-    s:[0,1],
-    ArrowLeft:[-1,0],
-    a:[-1,0],
-    ArrowRight:[1,0],
-    d:[1,0]
-  };
-
-  if(map[e.key]){
-    e.preventDefault();
-    setDirection(...map[e.key]);
-  }
-
-  if(e.key===" "){
-    e.preventDefault();
-
-    if(state==="playing") pause();
-    else if(state==="paused") resume();
-  }
-});
-
-/* حرکت با کشیدن انگشت */
-
-let sx=0;
-let sy=0;
-
-$("boardWrap").addEventListener("pointerdown",e=>{
-  sx=e.clientX;
-  sy=e.clientY;
-});
-
-$("boardWrap").addEventListener("pointerup",e=>{
-  const dx=e.clientX-sx;
-  const dy=e.clientY-sy;
-
-  if(Math.max(Math.abs(dx),Math.abs(dy))<cfg.sensitivity){
-    return;
-  }
-
-  if(Math.abs(dx)>Math.abs(dy)){
-    setDirection(dx>0?1:-1,0);
-  } else {
-    setDirection(0,dy>0?1:-1);
-  }
-});
-
-$("boardWrap").addEventListener(
-  "touchmove",
-  e=>e.preventDefault(),
-  {passive:false}
-);
-
-/* رنگ‌ها و تنظیمات */
-
-$("applyHex").onclick=()=>{
-  const value=$("hexInput").value.trim();
-
-  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)){
-    $("bodyColor").value=value;
-    return;
-  }
-
-  const rgb=value.match(
-    /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i
-  );
-
-  if(rgb){
-    const values=rgb.slice(1).map(Number);
-
-    if(values.every(x=>x<=255)){
-      $("bodyColor").value="#"+values
-        .map(x=>x.toString(16).padStart(2,"0"))
-        .join("");
-      return;
-    }
-  }
-
-  alert("کد رنگ معتبر نیست");
-};
-
-$("saveSettings").onclick=()=>{
-  Object.keys(defaults).forEach(key=>{
-    const el=$(key);
-    if(!el) return;
-
-    cfg[key]=el.type==="checkbox"
-      ?el.checked
-      :el.type==="range"
-      ?Number(el.value)
-      :el.value;
-  });
-
-  saveSettings();
-  applyTheme();
-  home();
-};
-
-/* تغییر زبان */
-
-let lang="fa";
-
-$("langBtn").onclick=()=>{
-  lang=lang==="fa"?"en":"fa";
-
-  document.documentElement.lang=lang;
-  document.documentElement.dir=lang==="fa"?"rtl":"ltr";
-
-  $("langBtn").textContent=lang==="fa"?"EN":"فا";
-
-  if(lang==="en"){
-    $("playBtn").textContent="▶ Start Game";
-    $("customBtn").textContent="✦ Customize";
-    $("recordsBtn").textContent="♛ Records";
-  } else {
-    $("playBtn").textContent="▶ شروع بازی";
-    $("customBtn").textContent="✦ شخصی‌سازی";
-    $("recordsBtn").textContent="♛ رکوردها";
-  }
-};
-
-/* راه‌اندازی اولیه */
-
-loadSettings();
-updateHome();
-draw();
-
+$('playBtn').onclick=startGame;$('customBtn').onclick=()=>{loadSettings();show('settings')};$('recordsBtn').onclick=()=>{updateHome();show('records')};
+$('homeBtn').onclick=home;$('settingsHome').onclick=home;$('recordsHome').onclick=home;$('pauseBtn').onclick=pause;$('restartBtn').onclick=startGame;
+$('overlayMain').onclick=()=>state==='paused'?resume():startGame();$('overlayHome').onclick=home;
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('selected',x===b))});
+document.querySelectorAll('[data-dir]').forEach(b=>{const m={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};b.addEventListener('pointerdown',e=>{e.preventDefault();setDirection(...m[b.dataset.dir])})});
+document.addEventListener('keydown',e=>{let m={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};if(m[e.key]){e.preventDefault();setDirection(...m[e.key])}if(e.key===' '){e.preventDefault();if(state==='playing')pause();else if(state==='paused')resume()}});
+let sx=0,sy=0;$('boardWrap').addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});$('boardWrap').addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;if(Math.abs(dx)>Math.abs(dy))setDirection(dx>0?1:-1,0);else setDirection(0,dy>0?1:-1)});
+$('boardWrap').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+$('saveSettings').onclick=()=>{cfg.bodyColor=$('bodyColor').value;cfg.headColor=$('headColor').value;cfg.foodColor=$('foodColor').value;cfg.bgColor=$('bgColor').value;cfg.theme=$('theme').value;cfg.speed=Number($('speed').value);cfg.gridSize=Number($('gridSize').value);cfg.sound=$('sound').value==='on';saveCfg();theme();home()};
+$('langBtn').onclick=()=>alert('نسخه فارسی بازی فعال است. زبان انگلیسی در نسخه بعدی اضافه می‌شود.');
+loadSettings();updateHome();draw();
 })();
 </script>
-
 </body>
-  </html>
+                                                                         </html>
